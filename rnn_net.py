@@ -5,12 +5,13 @@ import json
 from layers import Dense
 
 class SimpleRNN(object):
-	def __init__(self,rnn_cell,overstructure,seq_len=5,feature_len=28,learning_rate=0.001,):
+	def __init__(self,rnn_cell,overstructure,seq_len=5,feature_len=28,learning_rate=0.001,use_rnn_cell=True):
 		self._rnn_cell = rnn_cell
 		self._overstructure = overstructure
 		self.learning_rate = learning_rate
 		self._seq_len = seq_len
 		self._feature_len = feature_len
+		self._use_rnn_cell = use_rnn_cell
 
 		self._build_ph()
 		self._build_net()
@@ -27,14 +28,15 @@ class SimpleRNN(object):
 		self.learning_rate_ph = tf.placeholder(tf.float32,[])
 
 	def _build_net(self):
-		out, _ = tf.nn.dynamic_rnn(self._rnn_cell, self.input,time_major=False, dtype=tf.float32)
-		#out BxTxC
-		out = out[:,-1]
+		if self._use_rnn_cell:
+			out, _ = tf.nn.dynamic_rnn(self._rnn_cell, self.input,time_major=False, dtype=tf.float32)
+			#out BxTxC
+			out = out[:,-1]
 		#out = Dense(56)(tf.reshape(self.input,[-1,self._seq_len*self._feature_len]))
 		out = self.input
 		for i,l in enumerate(self._overstructure):
 			out = l(out,"layer_{}".format(i))
-		out = out[:,-1]
+		
 		self._last_layer = Dense(1)
 		self.logit = self._last_layer(out,"out")
 
